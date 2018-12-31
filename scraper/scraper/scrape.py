@@ -17,7 +17,8 @@ cache_backend = requests_cache.backends.sqlite.DbCache(location='writing.com_cac
 
 converter = html2text.HTML2Text()
 converter.unicode_snob = True
-converter.body_width = 0
+converter.use_automatic_links = True
+converter.body_width = 72#0
 
 
 def html_to_text(html: str):
@@ -149,7 +150,6 @@ def scrape_story(story_index_url: str, *, session: requests.session):
 
 
 def main(story_url):
-    print(story_url)
     if not "/interact/" in story_url:
         print("Invalid URL. Only interactive stories are supported at this time.")
         sys.exit(1)
@@ -169,7 +169,26 @@ def main(story_url):
     story_title = get_title(story_url, session=s)
 
     for chapter in scrape_story(story_url, session=s):
-        print(chapter)
+        # print(chapter)
+        print()
+        print('-' * 72)
+        print()
+        print(f"> created: {chapter['date']}")
+        print(f"> id({len(chapter['id'])}): {'-'.join([*chapter['id']])}")
+        print(f"> title: {chapter['title']}")
+        print()
+        print(chapter['content'])
+        print()
+        if not chapter['is_ending']:
+            print('-' * 72)
+            print()
+            for i, choice in enumerate(chapter['choices']):
+                text = choice['text']
+                if choice['type'] == 'blank':
+                    text = '* ' + text
+                print(f'{i+1}) {choice["text"]}')
+            print()
+        print('-' * 72)
         print()
 
 
