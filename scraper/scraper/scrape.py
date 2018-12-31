@@ -107,7 +107,20 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     # Find story content
     chapter_body_soup = content_soup.select_one('.KonaBody')
-    chapter_body = html_to_text(str(chapter_body_soup))
+
+    for anchor in chapter_body_soup.select('a'):
+        parts = urllib.parse.urlsplit(anchor['href'])
+        if parts.path == '/main/redirect.php':
+            # https://www.Writing.Com/main/redirect.php?htime=1546289347&hkey=999220ca6bd1b035cc0ece173ab20cc7090c6008&redirect_url=http%3A%2F%2Fwww.google.com%2F
+            query = urllib.parse.parse_qs(parts.query)
+            anchor['href'] = query['redirect_url'][0]
+
+    chapter_body = str(chapter_body_soup)
+    chapter_body = re.sub(r'<br ?/?>', r'<br /><br />', chapter_body)
+    chapter_body = html_to_text(chapter_body)
+    chapter_body = chapter_body.strip()
+    chapter_body = re.sub(r' +', ' ', chapter_body)
+    chapter_body = re.sub(r'\n\s*(\n\s*)+', '\n\n', chapter_body)
 
     # Find chapter links
     chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
