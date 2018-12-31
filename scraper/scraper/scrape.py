@@ -188,6 +188,7 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
 
 def main(story_url, starting_point):
     story_url = story_url.replace('/interact.php/', '/interact')
+    story_url = story_url.replace('//writing.com/', '//www.writing.com/')
 
     if not "/interact/" in story_url:
         print("Invalid URL. Only interactive stories are supported at this time.")
