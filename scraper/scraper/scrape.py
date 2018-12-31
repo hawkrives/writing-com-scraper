@@ -109,6 +109,8 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     chapter_body_soup = content_soup.select_one('.KonaBody')
 
     for anchor in chapter_body_soup.select('a'):
+        if 'href' not in anchor:
+            continue
         parts = urllib.parse.urlsplit(anchor['href'])
         if parts.path == '/main/redirect.php':
             # https://www.Writing.Com/main/redirect.php?htime=1546289347&hkey=999220ca6bd1b035cc0ece173ab20cc7090c6008&redirect_url=http%3A%2F%2Fwww.google.com%2F
