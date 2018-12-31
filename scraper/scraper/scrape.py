@@ -86,6 +86,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
             'author': 'Writing.com',
             'content': "Congratulations! You have reached the end of an existing storyline.",
             'choices': [],
+            'date': None,
             'is_ending': True,
         }
 
@@ -122,6 +123,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         'author': chapter_author,
         'content': chapter_body,
         'choices': chapter_links,
+        'date': chapter_date,
         'is_ending': False,
     }
 
