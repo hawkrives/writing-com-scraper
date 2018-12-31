@@ -109,6 +109,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
                      for index, p in enumerate(content_soup.select('div > div > p[align=left]:has(> a)'))]
 
     if not req.from_cache:
+        print('sleep 15')
         time.sleep(15)
 
     return {
