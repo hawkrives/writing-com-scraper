@@ -187,7 +187,6 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
 
 
 def main(story_url, starting_point):
-    print(f'downloading {story_url}, starting at {starting_point}')
     story_url = story_url.replace('/interact.php/', '/interact')
 
     if not "/interact/" in story_url:
@@ -200,6 +199,8 @@ def main(story_url, starting_point):
 
     if not story_url.endswith('/'):
         story_url += '/'
+
+    print(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
 
