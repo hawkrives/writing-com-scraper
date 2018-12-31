@@ -91,7 +91,11 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     content_soup = soup.select_one('.norm')
 
-    chapter_title = content_soup.select_one('span[title^=Created] b').string
+    chapter_heading = content_soup.select_one('span[title^=Created]')
+
+    chapter_title = chapter_heading.select_one('b').string
+
+    chapter_date = chapter_heading['title'].replace('Created: ', '')
 
     # Find chapter author
     chapter_author = content_soup.select_one('i + .noselect > [title^=Username]')
