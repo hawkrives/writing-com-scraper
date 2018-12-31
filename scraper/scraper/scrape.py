@@ -1,8 +1,10 @@
-from collections import deque
+from collections import deque, Counter
 import urllib.parse
+import random
 import time
 import sys
 import os
+import re
 from bs4 import BeautifulSoup
 import requests_cache
 import html2text
@@ -49,6 +51,15 @@ def log_in(*, session, username, password):
         sys.exit(1)
 
 
+seen_urls_counter = Counter()
+def sleep_for_url(url: str):
+    seen_urls_counter[url] += 1
+    n = seen_urls_counter[url]
+    amount = 30 + (2 ** n) + (random.randint(0, 1000) / 1000)
+    print('sleeping for', amount, 'seconds')
+    time.sleep(amount)
+
+
 def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     """
     input: url
@@ -58,17 +69,11 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     body = req.text
 
     interactive_warning = '<title>Interactive Stories Are Temporarily Unavailable</title>'
-    if interactive_warning in body:
-        for sleep_time in [30, 60, 120, 240, 480, 960]:
-            print('sleeping for', sleep_time, 'seconds')
-            if interactive_warning in body:
-                time.sleep(sleep_time)
-                cache_backend.delete_url(url)
-                req = session.get(url)
-                body = req.text
-                # print(body)
-            else:
-                break
+    while interactive_warning in body:
+        sleep_for_url(url)
+        cache_backend.delete_url(url)
+        req = session.get(url)
+        body = req.text
 
     soup = BeautifulSoup(body, features="html.parser")
 
