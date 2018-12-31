@@ -121,8 +121,8 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     }
 
 
-def scrape_story(story_index_url: str, *, session: requests.session):
-    chapters_to_scrape = deque(['1'])
+def scrape_story(story_index_url: str, *, starting_point: str, session: requests.session):
+    chapters_to_scrape = deque(starting_point)
     scraped_chapters = set()
 
     while True:
@@ -149,7 +149,8 @@ def scrape_story(story_index_url: str, *, session: requests.session):
         print()
 
 
-def main(story_url):
+def main(story_url, starting_point):
+    print(f'downloading {story_url}, starting at {starting_point}')
     if not "/interact/" in story_url:
         print("Invalid URL. Only interactive stories are supported at this time.")
         sys.exit(1)
@@ -168,7 +169,7 @@ def main(story_url):
 
     story_title = get_title(story_url, session=s)
 
-    for chapter in scrape_story(story_url, session=s):
+    for chapter in scrape_story(story_url, starting_point=starting_point, session=s):
         # print(chapter)
         print()
         print('-' * 72)
@@ -194,4 +195,5 @@ def main(story_url):
 
 if __name__ == '__main__':
     story_url = sys.argv[1]
-    main(story_url)
+    starting_point = (sys.argv[2] if len(sys.argv) >= 2 else '1').split(',')
+    main(story_url, starting_point)
