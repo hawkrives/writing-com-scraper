@@ -110,8 +110,23 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     chapter_body = html_to_text(str(chapter_body_soup))
 
     # Find chapter links
-    chapter_links = [{'id': chapter_id + str(index + 1), 'text': p.select_one('a').string, 'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'}
-                     for index, p in enumerate(content_soup.select('div > div > p[align=left]:has(> a)'))]
+    chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
+    chapter_links = [{
+        'id': chapter_id + str(index + 1),
+        'text': p.select_one('a').get_text(),
+        'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
+    } for index, p in enumerate(chapter_link_elements)]
+
+    if len(chapter_links) is 0:
+        return {
+            'id': chapter_id,
+            'title': chapter_title,
+            'author': chapter_author,
+            'content': chapter_body,
+            'choices': chapter_links,
+            'date': chapter_date,
+            'is_ending': True,
+        }
 
     if not req.from_cache:
         print('sleep 15')
