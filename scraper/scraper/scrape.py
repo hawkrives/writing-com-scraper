@@ -8,6 +8,7 @@ import re
 from bs4 import BeautifulSoup
 import requests_cache
 import html2text
+import pendulum
 import requests
 
 username = os.getenv('WRITINGCOM_USERNAME')
@@ -25,10 +26,50 @@ def html_to_text(html: str):
     return converter.handle(html)
 
 
-def get_title(story_url: str, *, session: requests.session):
+def parse_writing_time(ts: str):
+    # remove the prefix
+    ts = re.sub(r'^.*: ', '', ts)
+
+    # remove the " at "
+    ts = ts.replace(' at ', ' ')
+
+    # uppercase the meridian for pendulum
+    ts = ts.replace('am', 'AM').replace('pm', 'PM')
+
+    # parse (eg. "October 7th 2007, 5:27PM")
+    timestamp = pendulum.from_format(ts, 'MMMM Do, YYYY h:mmA')
+
+    # and isoformat for return
+    return timestamp.isoformat()
+
+
+def get_meta(story_url: str, *, session: requests.session):
     body = session.get(story_url).text
     soup = BeautifulSoup(body, features="html.parser")
-    return soup.select_one('.proll').string
+
+    story_title = soup.select_one('.proll').string
+    story_title = re.sub(r'\s+', ' ', story_title)
+    story_title = story_title.strip()
+
+    story_author = soup.select_one('.shadowBoxTop a[title^=Username]').text
+
+    meta_items = soup.select('.mainLineBorderTop > div > div[style] > div')
+    rating, chapter_count, created, updated = [e.get_text() for e in meta_items]
+
+    rating = rating.replace('Intro Rated:', '').strip()
+    chapter_count = int(re.sub(r'[^0-9]', '', chapter_count))
+
+    date_created = parse_writing_time(created)
+    date_updated = parse_writing_time(updated)
+
+    return {
+        'title': story_title,
+        'author': story_author,
+        'rating': rating,
+        'chapter_count': chapter_count,
+        'date_created': date_created,
+        'date_updated': date_updated,
+    }
 
 
 def get_id(story_url: str):
@@ -208,7 +249,8 @@ def main(story_url, starting_point):
     s = requests_cache.CachedSession(backend=cache_backend)
     log_in(session=s, username=username, password=password)
 
-    story_title = get_title(story_url, session=s)
+    story_meta = get_meta(story_url, session=s)
+    print(story_meta)
 
     for chapter in scrape_story(story_url, starting_point=starting_point, session=s):
         # print(chapter)
