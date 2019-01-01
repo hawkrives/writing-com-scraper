@@ -323,7 +323,7 @@ def main():
     print(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
-    folder = Path('.') / f'{story_id}'
+    folder = Path('.') / 'archive' / f'{story_id}'
     folder.mkdir(parents=True, exist_ok=True)
 
     cache_backend = requests_cache.backends.sqlite.DbCache(location=(folder / 'cache').as_posix())
