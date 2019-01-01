@@ -26,6 +26,10 @@ converter.use_automatic_links = True
 converter.body_width = 0
 
 
+def stderr(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
+
 def html_to_text(html: str):
     return converter.handle(html)
 
@@ -99,7 +103,7 @@ def log_in(*, session, username, password):
     resp = session.post(url, data=data)
 
     if 'Logout' not in resp.text:
-        print('Login failed')
+        stderr('Login failed')
         sys.exit(1)
 
 
@@ -108,7 +112,7 @@ def sleep_for_url(url: str):
     seen_urls_counter[url] += 1
     n = seen_urls_counter[url]
     amount = 30 + (2 ** n) + (random.randint(0, 1000) / 1000)
-    print('sleeping for', amount, 'seconds')
+    stderr('sleeping for', amount, 'seconds')
     time.sleep(amount)
 
 
@@ -239,7 +243,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         }
 
     if not req.from_cache:
-        # print('sleep 5')
+        # stderr('sleep 5')
         time.sleep(5)
 
     return {
@@ -293,11 +297,11 @@ def clean_story_url(story_url):
     story_url = story_url.replace('//writing.com/', '//www.writing.com/')
 
     if not "/interact/" in story_url:
-        print("Invalid URL. Only interactive stories are supported at this time.")
+        stderr("Invalid URL. Only interactive stories are supported at this time.")
         sys.exit(1)
 
     if "/map/" in story_url:
-        print("Invalid URL. You must pass the overview page at this time.")
+        stderr("Invalid URL. You must pass the overview page at this time.")
         sys.exit(1)
 
     if not story_url.endswith('/'):
@@ -351,7 +355,7 @@ def main():
     story_url = arguments.story_url
     starting_point = arguments.starting_point
 
-    print(f'downloading {story_url}, starting at {starting_point}')
+    stderr(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
     folder = Path('.') / 'archive' / f'{story_id}'
@@ -360,12 +364,14 @@ def main():
     cache_backend = requests_cache.backends.sqlite.DbCache(location=(folder / 'cache').as_posix())
     s = requests_cache.CachedSession(backend=cache_backend)
 
+    start = time.perf_counter()
     log_in(session=s, username=username, password=password)
+    stderr(f'login took {time.perf_counter() - start:0.02}')
 
     story_meta = get_meta(story_url, session=s)
     # be sure to update with the canonical url
     story_url = story_meta['url']
-    print(story_meta)
+    stderr(story_meta)
 
     story_filename = "".join([c if c.isalpha() or c.isdigit() or c==' ' else '_' for c in story_meta['title']]).strip()
     chapter_count_width = len(str(story_meta['chapter_count']))
@@ -383,7 +389,7 @@ def main():
         completed_count = str(completed_count).zfill(chapter_count_width)
         chapter_count = story_meta['chapter_count']
         pretty_chapter_id = '-'.join([*chapter['id']])
-        print(f"{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}")
+        stderr(f"{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}")
         with open(folder / f'{chapter["id"]}.json', 'w', encoding='utf-8') as outfile:
             json.dump(chapter, outfile, sort_keys=True, indent=4)
             outfile.write('\n')
