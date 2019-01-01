@@ -242,7 +242,9 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
             # print('chapter downloading complete!')
             break
 
-        chapter_url = story_index_url + '/map/' + chapter_id
+        story_index_url = story_index_url + '/' if not story_index_url.endswith('/') else story_index_url
+
+        chapter_url = story_index_url + 'map/' + chapter_id
         # print(chapter_url)
 
         with timeit('overall chapter'):
