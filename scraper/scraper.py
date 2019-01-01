@@ -213,7 +213,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     chapter_body = clean_chapter_body(chapter_body)
 
     # Find chapter links
-    chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
+    chapter_link_elements = content_soup.select('div > div > div[style] ~ p[align=left]:has(> a)')
     chapter_links = []
     for index, p in enumerate(chapter_link_elements):
         anchor = p.select_one('a')
