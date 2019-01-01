@@ -1,7 +1,9 @@
 from collections import deque, Counter
+from pathlib import Path
 import urllib.parse
 import argparse
 import random
+import json
 import time
 import sys
 import os
@@ -15,12 +17,12 @@ import requests
 username = os.getenv('WRITINGCOM_USERNAME')
 password = os.getenv('WRITINGCOM_PASSWORD')
 
-cache_backend = requests_cache.backends.sqlite.DbCache(location='writing.com_cache')
+cache_backend = None
 
 converter = html2text.HTML2Text()
 converter.unicode_snob = True
 converter.use_automatic_links = True
-converter.body_width = 72#0
+converter.body_width = 0
 
 
 def html_to_text(html: str):
@@ -179,7 +181,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
     chapter_links = [{
         'id': chapter_id + str(index + 1),
-        'text': p.select_one('a').get_text(),
+        'text': p.select_one('a').get_text().strip(),
         'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
     } for index, p in enumerate(chapter_link_elements)]
 
@@ -195,7 +197,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         }
 
     if not req.from_cache:
-        print('sleep 5')
+        # print('sleep 5')
         time.sleep(5)
 
     return {
@@ -217,11 +219,11 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
         try:
             chapter_id = chapters_to_scrape.popleft()
         except IndexError:
-            print('chapter downloading complete!')
+            # print('chapter downloading complete!')
             break
 
         chapter_url = story_index_url + 'map/' + chapter_id
-        print(chapter_url)
+        # print(chapter_url)
 
         chapter = scrape_chapter(chapter_url, chapter_id=chapter_id, session=session)
         scraped_chapters.add(chapter['id'])
@@ -231,10 +233,7 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
             if choice['type'] == 'chapter':
                 chapters_to_scrape.append(choice['id'])
 
-        # print('queue:', chapters_to_scrape)
-        print('queue size:', len(chapters_to_scrape))
-        print('completed size:', len(scraped_chapters))
-        print()
+        print(f"{len(chapters_to_scrape)}|{len(scraped_chapters)} {'-'.join([*chapter['id']])}")
 
 
 def clean_story_url(story_url):
@@ -303,8 +302,10 @@ def main():
     print(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
+    folder = Path('.') / f'{story_id}'
+    folder.mkdir(parents=True, exist_ok=True)
 
-    cache_backend = requests_cache.backends.sqlite.DbCache(location=f'writing_com_cache_{story_id}')
+    cache_backend = requests_cache.backends.sqlite.DbCache(location=(folder / 'cache').as_posix())
     s = requests_cache.CachedSession(backend=cache_backend)
 
     log_in(session=s, username=username, password=password)
@@ -312,9 +313,17 @@ def main():
     story_meta = get_meta(story_url, session=s)
     print(story_meta)
 
+    with open(folder / f'meta.json', 'w', encoding='utf-8') as outfile:
+        json.dump(story_meta, outfile, sort_keys=True, indent=4)
+        outfile.write('\n')
+
     for chapter in scrape_story(story_url, starting_point=starting_point, session=s):
         # print(chapter)
-        print_chapter(chapter)
+        # print_chapter(chapter)
+        pass
+        with open(folder / f'{chapter["id"]}.json', 'w', encoding='utf-8') as outfile:
+            json.dump(chapter, outfile, sort_keys=True, indent=4)
+            outfile.write('\n')
 
 
 if __name__ == '__main__':
