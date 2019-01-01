@@ -1,8 +1,8 @@
-from pathlib import Path
 import urllib.parse
 import collections
 import contextlib
 import argparse
+import pathlib
 import random
 import json
 import time
@@ -332,7 +332,7 @@ def main():
     stderr(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
-    folder = Path('.') / 'archive' / f'{story_id}'
+    folder = pathlib.Path('.') / 'archive' / f'{story_id}'
     folder.mkdir(parents=True, exist_ok=True)
 
     cache_backend = requests_cache.backends.sqlite.DbCache(location=(folder / 'cache').as_posix())
