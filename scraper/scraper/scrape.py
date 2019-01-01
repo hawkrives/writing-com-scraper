@@ -78,6 +78,7 @@ def get_meta(story_url: str, *, session: requests.session):
         'chapter_count': chapter_count,
         'date_created': date_created,
         'date_updated': date_updated,
+        'date_fetched': pendulum.now().isoformat(),
     }
 
 
