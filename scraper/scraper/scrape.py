@@ -228,6 +228,8 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
 
 
 def main(story_url, starting_point):
+    global cache_backend
+
     story_url = story_url.replace('/interact.php/', '/interact')
     story_url = story_url.replace('//writing.com/', '//www.writing.com/')
 
@@ -245,6 +247,8 @@ def main(story_url, starting_point):
     print(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
+
+    cache_backend = requests_cache.backends.sqlite.DbCache(location=f'writing_com_cache_{story_id}')
 
     s = requests_cache.CachedSession(backend=cache_backend)
     log_in(session=s, username=username, password=password)
