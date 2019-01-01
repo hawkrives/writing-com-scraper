@@ -188,7 +188,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
             'is_ending': True,
         }
 
-    content_soup = soup.select_one('.norm')
+    content_soup = soup.select_one('#Content_Column_Inner')
 
     try:
         chapter_heading = content_soup.select_one('span[title^=Created]')
