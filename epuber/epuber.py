@@ -133,12 +133,10 @@ def title_to_filename(title: str):
 
 def args():
     parser = argparse.ArgumentParser(description='Convert a downloaded story into an ePub')
-    parser.add_argument('story_dir', type=str,
+    parser.add_argument('story_dirs', metavar='DIR', type=str, nargs='+',
                         help='the folder containing the downloaded story')
 
     parsed = parser.parse_args()
-
-    parsed.story_dir = pathlib.Path(parsed.story_dir)
 
     return parsed
 
@@ -146,21 +144,26 @@ def args():
 def main():
 	parsed = args()
 
-	story_dir = parsed.story_dir
+	for story_dir in parsed.story_dirs:
+		story_dir = pathlib.Path(story_dir)
 
-	for file in story_dir.glob('*'):
-		if file.name.endswith('.sqlite') or file.name.startswith('0-') or file.name.endswith('.epub'):
-			continue
-		# print(file)
+		print('loading', story_dir)
 
-	with open(story_dir / 'meta.json', 'r', encoding='utf-8') as infile:
-		story_meta = json.load(infile)
+		for file in story_dir.glob('*'):
+			if file.name.endswith('.sqlite') or file.name.startswith('0-') or file.name.endswith('.epub'):
+				continue
+			# print(file)
 
-	chapters = load_story(story_dir)
+		with open(story_dir / 'meta.json', 'r', encoding='utf-8') as infile:
+			story_meta = json.load(infile)
 
-	# print(chapters)
+		print('processing', story_meta['title'])
 
-	generate_book(story_meta, chapters)
+		chapters = load_story(story_dir)
+
+		# print(chapters)
+
+		generate_book(story_meta, chapters)
 
 
 if __name__ == '__main__':
