@@ -1,6 +1,7 @@
 import urllib.parse
 import collections
 import contextlib
+import threading
 import argparse
 import pathlib
 import random
@@ -19,6 +20,8 @@ username = os.getenv('WRITINGCOM_USERNAME')
 password = os.getenv('WRITINGCOM_PASSWORD')
 
 cache_backend = None
+
+requests_lock = threading.Lock()
 
 seen_urls_counter = collections.Counter()
 
@@ -135,16 +138,13 @@ def clean_chapter_body(content: str):
     return content
 
 
-def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
-    """
-    input: url
-    output: {title: str, content: markdown_str, choices: list({text, id})}
-    """
+def fetch_page(*, url: str, session: requests.session):
     req = session.get(url)
     body = req.text
 
-    # fix invalid HTML from the abbreviated chapter title
-    body = body.replace('&#.', '&amp;#.')
+    if not req.from_cache:
+        # stderr('sleep 5')
+        time.sleep(5)
 
     interactive_warning = '<title>Interactive Stories Are Temporarily Unavailable</title>'
     while interactive_warning in body:
@@ -152,6 +152,13 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         cache_backend.delete_url(url)
         req = session.get(url)
         body = req.text
+
+    return body
+
+
+def process_chapter(*, body: str, chapter_id: str):
+    # fix invalid HTML from the abbreviated chapter title
+    body = body.replace('&#.', '&amp;#.')
 
     soup = BeautifulSoup(body, features="lxml")
 
@@ -237,10 +244,6 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
             'is_ending': True,
         }
 
-    if not req.from_cache:
-        # stderr('sleep 5')
-        time.sleep(5)
-
     return {
         'id': chapter_id,
         'title': chapter_title,
@@ -250,6 +253,13 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         'date': chapter_date,
         'is_ending': False,
     }
+
+
+def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
+    with requests_lock:
+        body = fetch_page(url=url, session=session)
+
+    return process_chapter(body=body, chapter_id=chapter_id)
 
 
 def scrape_story(story_index_url: str, *, starting_point: str, session: requests.session):
