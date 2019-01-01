@@ -102,6 +102,14 @@ def sleep_for_url(url: str):
     time.sleep(amount)
 
 
+def clean_redirect_url(href: str):
+    parts = urllib.parse.urlsplit(href)
+    if parts.path == '/main/redirect.php':
+        query = urllib.parse.parse_qs(parts.query)
+        return query['redirect_url'][0]
+    return href
+
+
 def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     """
     input: url
@@ -150,13 +158,9 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     chapter_body_soup = content_soup.select_one('.KonaBody')
 
     for anchor in chapter_body_soup.select('a'):
-        if 'href' not in anchor:
+        if anchor.get('href', None) is None:
             continue
-        parts = urllib.parse.urlsplit(anchor['href'])
-        if parts.path == '/main/redirect.php':
-            # https://www.Writing.Com/main/redirect.php?htime=1546289347&hkey=999220ca6bd1b035cc0ece173ab20cc7090c6008&redirect_url=http%3A%2F%2Fwww.google.com%2F
-            query = urllib.parse.parse_qs(parts.query)
-            anchor['href'] = query['redirect_url'][0]
+        anchor['href'] = clean_redirect_url(anchor['href'])
 
     chapter_body = str(chapter_body_soup)
     chapter_body = re.sub(r'<br ?/?>', r'<br /><br />', chapter_body)
