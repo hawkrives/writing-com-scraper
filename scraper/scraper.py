@@ -51,9 +51,10 @@ def parse_writing_time(ts: str):
     return timestamp.isoformat()
 
 
-def get_meta(story_url: str, *, session: requests.session):
-    # ensure we get a fresh response
-    cache_backend.delete_url(story_url)
+def get_meta(story_url: str, *, session: requests.session, stale_ok: bool = False):
+    if not stale_ok:
+        # ensure we get a fresh response
+        cache_backend.delete_url(story_url)
 
     response = session.get(story_url)
     body = response.text
@@ -310,12 +311,14 @@ def clean_story_url(story_url):
     return story_url
 
 
-def args():
+def get_args():
     parser = argparse.ArgumentParser(description='Download a story from writing.com')
     parser.add_argument('story_url', type=str,
                         help='the story URL to download')
     parser.add_argument('starting_point', type=str, nargs='?', default='1',
                         help='the chapter to start at (eg, 15115)')
+    parser.add_argument('--debug', action='store_true',
+                        help='enter debug mode')
 
     parsed = parser.parse_args()
 
@@ -328,7 +331,7 @@ def args():
 def main():
     global cache_backend
 
-    arguments = args()
+    arguments = get_args()
     story_url = arguments.story_url
     starting_point = arguments.starting_point
 
@@ -341,11 +344,12 @@ def main():
     cache_backend = requests_cache.backends.sqlite.DbCache(location=(folder / 'cache').as_posix())
     s = requests_cache.CachedSession(backend=cache_backend)
 
-    start = time.perf_counter()
-    log_in(session=s, username=username, password=password)
-    stderr(f'login took {time.perf_counter() - start:0.02}')
+    if not arguments.debug:
+        start = time.perf_counter()
+        # log_in(session=s, username=username, password=password)
+        stderr(f'login took {time.perf_counter() - start:0.02}')
 
-    story_meta = get_meta(story_url, session=s)
+    story_meta = get_meta(story_url, session=s, stale_ok=arguments.debug)
     # be sure to update with the canonical url
     story_url = story_meta['url']
     stderr(story_meta)
