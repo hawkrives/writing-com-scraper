@@ -5,3 +5,5 @@ source ./venv/bin/activate.fish
 for url in (cat ./urls.txt);
 	python3 scraper/scraper.py $url
 end
+
+python3 epuber/epuber.py archive/*
