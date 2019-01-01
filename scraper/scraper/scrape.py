@@ -1,5 +1,6 @@
 from collections import deque, Counter
 import urllib.parse
+import argparse
 import random
 import time
 import sys
@@ -236,9 +237,7 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
         print()
 
 
-def main(story_url, starting_point):
-    global cache_backend
-
+def clean_story_url(story_url):
     story_url = story_url.replace('/interact.php/', '/interact')
     story_url = story_url.replace('//writing.com/', '//www.writing.com/')
 
@@ -253,13 +252,61 @@ def main(story_url, starting_point):
     if not story_url.endswith('/'):
         story_url += '/'
 
+    return story_url
+
+
+def args():
+    parser = argparse.ArgumentParser(description='Download a story from writing.com')
+    parser.add_argument('story_url', type=str,
+                        help='the story URL to download')
+    parser.add_argument('starting_point', type=str, nargs='?', default='1',
+                        help='the chapter to start at (eg, 15115)')
+
+    parsed = parser.parse_args()
+
+    parsed.story_url = clean_story_url(parsed.story_url)
+    parsed.starting_point = parsed.starting_point.split(',')
+
+    return parsed
+
+
+def print_chapter(chapter):
+    print()
+    print('-' * 72)
+    print()
+    print(f"> created: {chapter['date']}")
+    print(f"> id({len(chapter['id'])}): {'-'.join([*chapter['id']])}")
+    print(f"> title: {chapter['title']}")
+    print()
+    print(chapter['content'])
+    print()
+    if not chapter['is_ending']:
+        print('-' * 72)
+        print()
+        for i, choice in enumerate(chapter['choices']):
+            text = choice['text']
+            if choice['type'] == 'blank':
+                text = '* ' + text
+            print(f'{i+1}) {text}')
+        print()
+    print('-' * 72)
+    print()
+
+
+def main():
+    global cache_backend
+
+    arguments = args()
+    story_url = arguments.story_url
+    starting_point = arguments.starting_point
+
     print(f'downloading {story_url}, starting at {starting_point}')
 
     story_id = get_id(story_url)
 
     cache_backend = requests_cache.backends.sqlite.DbCache(location=f'writing_com_cache_{story_id}')
-
     s = requests_cache.CachedSession(backend=cache_backend)
+
     log_in(session=s, username=username, password=password)
 
     story_meta = get_meta(story_url, session=s)
@@ -267,29 +314,8 @@ def main(story_url, starting_point):
 
     for chapter in scrape_story(story_url, starting_point=starting_point, session=s):
         # print(chapter)
-        print()
-        print('-' * 72)
-        print()
-        print(f"> created: {chapter['date']}")
-        print(f"> id({len(chapter['id'])}): {'-'.join([*chapter['id']])}")
-        print(f"> title: {chapter['title']}")
-        print()
-        print(chapter['content'])
-        print()
-        if not chapter['is_ending']:
-            print('-' * 72)
-            print()
-            for i, choice in enumerate(chapter['choices']):
-                text = choice['text']
-                if choice['type'] == 'blank':
-                    text = '* ' + text
-                print(f'{i+1}) {text}')
-            print()
-        print('-' * 72)
-        print()
+        print_chapter(chapter)
 
 
 if __name__ == '__main__':
-    story_url = sys.argv[1]
-    starting_point = (sys.argv[2] if len(sys.argv) > 2 else '1').split(',')
-    main(story_url, starting_point)
+    main()
