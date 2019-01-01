@@ -48,6 +48,9 @@ def parse_writing_time(ts: str):
 
 
 def get_meta(story_url: str, *, session: requests.session):
+    # ensure we get a fresh response
+    cache_backend.delete_url(story_url)
+
     response = session.get(story_url)
     body = response.text
     soup = BeautifulSoup(body, features="html.parser")
