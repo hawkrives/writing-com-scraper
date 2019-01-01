@@ -278,5 +278,5 @@ def main(story_url, starting_point):
 
 if __name__ == '__main__':
     story_url = sys.argv[1]
-    starting_point = (sys.argv[2] if len(sys.argv) >= 2 else '1').split(',')
+    starting_point = (sys.argv[2] if len(sys.argv) > 2 else '1').split(',')
     main(story_url, starting_point)
