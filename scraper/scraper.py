@@ -261,7 +261,18 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
                 chapters_to_scrape.append(choice['id'])
 
 
+def is_integer(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
 def clean_story_url(story_url):
+    if is_integer(story_url):
+        return f'https://writing.com/main/interact/item_id/{story_url}/'
+
     story_url = story_url.replace('/interact.php/', '/interact')
     story_url = story_url.replace('//writing.com/', '//www.writing.com/')
 
