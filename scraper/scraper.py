@@ -149,6 +149,9 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     req = session.get(url)
     body = req.text
 
+    # fix invalid HTML from the abbreviated chapter title
+    body = body.replace('&#.', '&amp;#.')
+
     interactive_warning = '<title>Interactive Stories Are Temporarily Unavailable</title>'
     while interactive_warning in body:
         sleep_for_url(url)
