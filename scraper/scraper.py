@@ -161,6 +161,19 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     soup = BeautifulSoup(body, features="lxml")
 
+    debugging = False
+    if debugging:
+        for tag in soup.select('meta, script, style, select, input, form, .noSelect, #Page_Top_Wrapper, #Left_Column_Wrapper, .noPrint, #Footer_Wrapper'):
+            tag.decompose()
+
+        for attr in ['onclick', 'style', 'onkeyup', 'onkeydown', 'onmouseover', 'onmouseup', 'onmouseout', 'onmousedown', 'oncontextmenu', 'ontouchstart', 'ontouchend', 'onfocus', 'onchange']:
+            for tag in soup.select(f'[{attr}]'):
+                tag[attr] = ''
+
+        for tag in soup.select('[href^=javascript]'):
+            tag['href'] = ''
+
+        print(soup.prettify())
 
     ending_chapter = soup.select_one('.shadowBox > div:nth-of-type(1) > big > b')
 
