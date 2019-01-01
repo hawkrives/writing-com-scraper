@@ -194,8 +194,8 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         }
 
     if not req.from_cache:
-        print('sleep 15')
-        time.sleep(15)
+        print('sleep 5')
+        time.sleep(5)
 
     return {
         'id': chapter_id,
