@@ -1,4 +1,4 @@
-from scraper.scrape import get_id, parse_writing_time, clean_redirect_url
+from scraper.scrape import get_id, parse_writing_time, clean_redirect_url, clean_chapter_body
 
 
 def test_get_id():
@@ -15,3 +15,10 @@ def test_parse_writing_time():
 
 def test_clean_redirect_url():
 	assert clean_redirect_url('https://www.Writing.Com/main/redirect.php?htime=1546289347&hkey=999220ca6bd1b035cc0ece173ab20cc7090c6008&redirect_url=http%3A%2F%2Fwww.google.com%2F') == 'http://www.google.com/'
+
+
+def test_clean_chapter_body():
+	assert clean_chapter_body("foo<br/><br/>bar") == "foo \n\nbar"
+	assert clean_chapter_body("foo     bar") == "foo bar"
+	assert clean_chapter_body("foo bar    ") == "foo bar"
+	assert clean_chapter_body("foo<br/>  <br/>bar    ") == "foo \n\nbar"

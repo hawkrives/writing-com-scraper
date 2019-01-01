@@ -110,6 +110,15 @@ def clean_redirect_url(href: str):
     return href
 
 
+def clean_chapter_body(content: str):
+    content = re.sub(r'<br ?/?>', r'<br /><br />', content)
+    content = html_to_text(content)
+    content = content.strip()
+    content = re.sub(r' +', ' ', content)
+    content = re.sub(r'\n\s*(\n\s*)+', '\n\n', content)
+    return content
+
+
 def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     """
     input: url
@@ -163,11 +172,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         anchor['href'] = clean_redirect_url(anchor['href'])
 
     chapter_body = str(chapter_body_soup)
-    chapter_body = re.sub(r'<br ?/?>', r'<br /><br />', chapter_body)
-    chapter_body = html_to_text(chapter_body)
-    chapter_body = chapter_body.strip()
-    chapter_body = re.sub(r' +', ' ', chapter_body)
-    chapter_body = re.sub(r'\n\s*(\n\s*)+', '\n\n', chapter_body)
+    chapter_body = clean_chapter_body(chapter_body)
 
     # Find chapter links
     chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
