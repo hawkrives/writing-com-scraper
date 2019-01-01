@@ -325,29 +325,6 @@ def args():
     return parsed
 
 
-def print_chapter(chapter):
-    print()
-    print('-' * 72)
-    print()
-    print(f"> created: {chapter['date']}")
-    print(f"> id({len(chapter['id'])}): {'-'.join([*chapter['id']])}")
-    print(f"> title: {chapter['title']}")
-    print()
-    print(chapter['content'])
-    print()
-    if not chapter['is_ending']:
-        print('-' * 72)
-        print()
-        for i, choice in enumerate(chapter['choices']):
-            text = choice['text']
-            if choice['type'] == 'blank':
-                text = '* ' + text
-            print(f'{i+1}) {text}')
-        print()
-    print('-' * 72)
-    print()
-
-
 def main():
     global cache_backend
 
