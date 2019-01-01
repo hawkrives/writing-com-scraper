@@ -1,6 +1,7 @@
 from collections import deque, Counter
 from pathlib import Path
 import urllib.parse
+import contextlib
 import argparse
 import random
 import json
@@ -124,6 +125,18 @@ def clean_chapter_body(content: str):
     return content
 
 
+@contextlib.contextmanager
+def timeit(label):
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        end = time.perf_counter()
+        duration = end - start
+        # print(f'[{label}]: {duration:0.2f}')
+        # print()
+
+
 def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     """
     input: url
@@ -141,7 +154,9 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     soup = BeautifulSoup(body, features="html.parser")
 
-    ending_chapter = soup.select_one('.shadowBox > div:nth-of-type(1) > big > b')
+    with timeit('is ending chapter'):
+        ending_chapter = soup.select_one('.shadowBox > div:nth-of-type(1) > big > b')
+
     if ending_chapter:
         return {
             'id': chapter_id,
@@ -155,37 +170,40 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     content_soup = soup.select_one('.norm')
 
-    chapter_heading = content_soup.select_one('span[title^=Created]')
+    with timeit('chapter meta'):
+        chapter_heading = content_soup.select_one('span[title^=Created]')
 
-    chapter_title = chapter_heading.select_one('b').string
+        chapter_title = chapter_heading.select_one('b').string
 
-    chapter_date = chapter_heading['title'].replace('Created: ', '')
+        chapter_date = chapter_heading['title'].replace('Created: ', '')
 
-    # Find chapter author
-    chapter_author = content_soup.select_one('i + .noselect > [title^=Username]')
-    if chapter_author:
-        chapter_author = chapter_author.string
-    else:
-        chapter_author = 'Unknown'
+        # Find chapter author
+        chapter_author = content_soup.select_one('i + .noselect > [title^=Username]')
+        if chapter_author:
+            chapter_author = chapter_author.string
+        else:
+            chapter_author = 'Unknown'
 
-    # Find story content
-    chapter_body_soup = content_soup.select_one('.KonaBody')
+    with timeit('body'):
+        # Find story content
+        chapter_body_soup = content_soup.select_one('.KonaBody')
 
-    for anchor in chapter_body_soup.select('a'):
-        if anchor.get('href', None) is None:
-            continue
-        anchor['href'] = clean_redirect_url(anchor['href'])
+        for anchor in chapter_body_soup.select('a'):
+            if anchor.get('href', None) is None:
+                continue
+            anchor['href'] = clean_redirect_url(anchor['href'])
 
-    chapter_body = str(chapter_body_soup)
-    chapter_body = clean_chapter_body(chapter_body)
+        chapter_body = str(chapter_body_soup)
+        chapter_body = clean_chapter_body(chapter_body)
 
-    # Find chapter links
-    chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
-    chapter_links = [{
-        'id': chapter_id + str(index + 1),
-        'text': p.select_one('a').get_text().strip(),
-        'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
-    } for index, p in enumerate(chapter_link_elements)]
+    with timeit('links'):
+        # Find chapter links
+        chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
+        chapter_links = [{
+            'id': chapter_id + str(index + 1),
+            'text': p.select_one('a').get_text().strip(),
+            'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
+        } for index, p in enumerate(chapter_link_elements)]
 
     if len(chapter_links) is 0:
         return {
@@ -224,18 +242,17 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
             # print('chapter downloading complete!')
             break
 
-        chapter_url = story_index_url + 'map/' + chapter_id
+        chapter_url = story_index_url + '/map/' + chapter_id
         # print(chapter_url)
 
-        chapter = scrape_chapter(chapter_url, chapter_id=chapter_id, session=session)
+        with timeit('overall chapter'):
+            chapter = scrape_chapter(chapter_url, chapter_id=chapter_id, session=session)
         scraped_chapters.add(chapter['id'])
-        yield chapter
+        yield chapter, len(chapters_to_scrape), len(scraped_chapters)
 
         for choice in chapter['choices']:
             if choice['type'] == 'chapter':
                 chapters_to_scrape.append(choice['id'])
-
-        print(f"{len(chapters_to_scrape)}|{len(scraped_chapters)} {'-'.join([*chapter['id']])}")
 
 
 def clean_story_url(story_url):
