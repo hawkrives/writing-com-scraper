@@ -339,7 +339,7 @@ def main():
 
     if not arguments.debug:
         start = time.perf_counter()
-        # log_in(session=s, username=username, password=password)
+        log_in(session=s, username=username, password=password)
         stderr(f'login took {time.perf_counter() - start:0.02}')
 
     story_meta = get_meta(story_url, session=s, stale_ok=arguments.debug)
