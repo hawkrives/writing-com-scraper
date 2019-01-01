@@ -1,6 +1,6 @@
-from collections import deque, Counter
 from pathlib import Path
 import urllib.parse
+import collections
 import contextlib
 import argparse
 import random
@@ -19,6 +19,8 @@ username = os.getenv('WRITINGCOM_USERNAME')
 password = os.getenv('WRITINGCOM_PASSWORD')
 
 cache_backend = None
+
+seen_urls_counter = collections.Counter()
 
 converter = html2text.HTML2Text()
 converter.unicode_snob = True
@@ -108,7 +110,6 @@ def log_in(*, session, username, password):
         sys.exit(1)
 
 
-seen_urls_counter = Counter()
 def sleep_for_url(url: str):
     seen_urls_counter[url] += 1
     n = seen_urls_counter[url]
@@ -252,7 +253,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
 
 def scrape_story(story_index_url: str, *, starting_point: str, session: requests.session):
-    chapters_to_scrape = deque(starting_point)
+    chapters_to_scrape = collections.deque(starting_point)
     scraped_chapters = set()
 
     while True:
