@@ -161,8 +161,8 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     soup = BeautifulSoup(body, features="lxml")
 
-    with timeit('is ending chapter'):
-        ending_chapter = soup.select_one('.shadowBox > div:nth-of-type(1) > big > b')
+
+    ending_chapter = soup.select_one('.shadowBox > div:nth-of-type(1) > big > b')
 
     if ending_chapter:
         return {
@@ -177,7 +177,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     content_soup = soup.select_one('.norm')
 
-    with timeit('chapter meta'):
+    try:
         chapter_heading = content_soup.select_one('span[title^=Created]')
 
         chapter_title = chapter_heading.select_one('b').string
@@ -190,27 +190,29 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
             chapter_author = chapter_author.string
         else:
             chapter_author = 'Unknown'
+    except AttributeError as exception:
+        stderr(url)
+        print(content_soup)
+        stderr(exception, file=sys.stderr)
 
-    with timeit('body'):
-        # Find story content
-        chapter_body_soup = content_soup.select_one('.KonaBody')
+    # Find story content
+    chapter_body_soup = content_soup.select_one('.KonaBody')
 
-        for anchor in chapter_body_soup.select('a'):
-            if anchor.get('href', None) is None:
-                continue
-            anchor['href'] = clean_redirect_url(anchor['href'])
+    for anchor in chapter_body_soup.select('a'):
+        if anchor.get('href', None) is None:
+            continue
+        anchor['href'] = clean_redirect_url(anchor['href'])
 
-        chapter_body = str(chapter_body_soup)
-        chapter_body = clean_chapter_body(chapter_body)
+    chapter_body = str(chapter_body_soup)
+    chapter_body = clean_chapter_body(chapter_body)
 
-    with timeit('links'):
-        # Find chapter links
-        chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
-        chapter_links = [{
-            'id': chapter_id + str(index + 1),
-            'text': p.select_one('a').get_text().strip(),
-            'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
-        } for index, p in enumerate(chapter_link_elements)]
+    # Find chapter links
+    chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
+    chapter_links = [{
+        'id': chapter_id + str(index + 1),
+        'text': p.select_one('a').get_text().strip(),
+        'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
+    } for index, p in enumerate(chapter_link_elements)]
 
     if len(chapter_links) is 0:
         return {
@@ -246,16 +248,14 @@ def scrape_story(story_index_url: str, *, starting_point: str, session: requests
         try:
             chapter_id = chapters_to_scrape.popleft()
         except IndexError:
-            # print('chapter downloading complete!')
+            # chapter downloading complete!
             break
 
         story_index_url = story_index_url + '/' if not story_index_url.endswith('/') else story_index_url
 
         chapter_url = story_index_url + 'map/' + chapter_id
-        # print(chapter_url)
 
-        with timeit('overall chapter'):
-            chapter = scrape_chapter(chapter_url, chapter_id=chapter_id, session=session)
+        chapter = scrape_chapter(chapter_url, chapter_id=chapter_id, session=session)
         scraped_chapters.add(chapter['id'])
         yield chapter, len(chapters_to_scrape), len(scraped_chapters)
 
