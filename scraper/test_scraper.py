@@ -1,4 +1,4 @@
-from scraper.scrape import get_id, parse_writing_time, clean_redirect_url, clean_chapter_body
+from scraper import get_id, parse_writing_time, clean_redirect_url, clean_chapter_body
 
 
 def test_get_id():
