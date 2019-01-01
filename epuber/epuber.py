@@ -5,34 +5,62 @@ from ebooklib import epub
 import markdown2
 
 
-def generate_chapter_links(choices):
+def hyphenate_id(idstr: str, ch = '-'):
+	return ch.join([*idstr])
+
+
+def nav_links(last_id):
+	yield '<p>'
+	yield 'Jump to: '
+	if last_id:
+		yield f'<a href="{last_id}.xhtml">Parent</a>'
+		yield f' | '
+	yield f'<a href="nav.xhtml">Outline</a>'
+	yield '</p>'
+
+
+def chapter_heading(chapter):
+	yield f'<p>Path: {hyphenate_id(chapter["id"])}</p>'
+	yield f'<h1>{chapter["title"]}</h1>'
+	yield f'<p>by <em>{chapter["author"]}</em> on {chapter["date"]}</p>'
+
+
+def choice_links(choices):
 	if not choices:
-		return ''
+		return '<p>This chapter has no choices.</p>'
 
 	yield '<h2>Choices</h2>'
 	yield '<ol>'
 	for choice in choices:
 		yield '<li>'
+
 		if choice['type'] == 'chapter':
 			yield f'<a href="./{choice["id"]}.xhtml">'
+
 		if choice['type'] == 'blank':
 			yield '* '
+
 		yield choice["text"]
+
 		if choice['type'] == 'chapter':
 			yield '</a>'
+
 		yield '</li>'
 	yield '</ol>'
 
 
-def generate_chapter_header(chapter):
+def generate_chapter(chapter):
 	last_id = chapter["id"][:-1]
-	yield '<hr/>'
-	if last_id:
-		yield f'<a href="{last_id}.xhtml">Go Back</a>'
-		yield f' | '
-	yield f'<a href="nav.xhtml">Overview</a>'
-	yield f'<h1>{chapter["title"]}</h1>'
-	yield f'<p>by {chapter["author"]} on {chapter["date"]}</p>'
+
+	yield from nav_links(last_id)
+	yield from chapter_heading(chapter)
+	yield chapter['content']
+	yield from choice_links(chapter['choices'])
+	yield from nav_links(last_id)
+
+
+def create_chapter_content(chapter):
+	return ''.join(generate_chapter(chapter))
 
 
 def generate_book(story_meta, chapters):
@@ -61,23 +89,19 @@ body {
 	# create chapter
 	epub_chapters = []
 	for chapter in sorted(chapters, key=lambda c: c['id']):
-		hyphenated_id = '-'.join([*chapter["id"]])
-		fancy_title = f'[{hyphenated_id}] {chapter["title"]}'
+		hyphenated_id = hyphenate_id(chapter["id"], ch='/')
+		fancy_title = f'{hyphenated_id} — {chapter["title"]}'
 
 		epub_chapter = epub.EpubHtml(title=fancy_title, file_name=f'{chapter["id"]}.xhtml', lang='en-US')
 		epub_chapter.add_link(href='style/stylesheet.css', rel='stylesheet', type='text/css')
 
-		choice_links = ''.join(list(generate_chapter_links(chapter['choices'])))
-		header = ''.join(list(generate_chapter_header(chapter)))
-		epub_chapter.content = header + chapter['content'] + choice_links
+		epub_chapter.content = create_chapter_content(chapter)
 
 		book.add_item(epub_chapter)
 		epub_chapters.append(epub_chapter)
 
 	# define Table Of Contents
-	book.toc = (
-		epub_chapters
-	)
+	book.toc = epub_chapters
 
 	# add default NCX and Nav file
 	book.add_item(epub.EpubNcx())
