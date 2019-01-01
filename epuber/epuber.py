@@ -26,6 +26,7 @@ def generate_chapter_links(choices):
 
 def generate_chapter_header(chapter):
 	last_id = chapter["id"][:-1]
+	yield '<hr/>'
 	if last_id:
 		yield f'<a href="{last_id}.xhtml">Go Back</a>'
 		yield f' | '
