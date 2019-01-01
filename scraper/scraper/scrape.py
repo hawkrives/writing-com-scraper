@@ -47,7 +47,8 @@ def parse_writing_time(ts: str):
 
 
 def get_meta(story_url: str, *, session: requests.session):
-    body = session.get(story_url).text
+    response = session.get(story_url)
+    body = response.text
     soup = BeautifulSoup(body, features="html.parser")
 
     story_title = soup.select_one('.proll').string
@@ -66,6 +67,7 @@ def get_meta(story_url: str, *, session: requests.session):
     date_updated = parse_writing_time(updated)
 
     return {
+        'url': response.url,
         'title': story_title,
         'author': story_author,
         'rating': rating,
@@ -311,16 +313,27 @@ def main():
     log_in(session=s, username=username, password=password)
 
     story_meta = get_meta(story_url, session=s)
+    # be sure to update with the canonical url
+    story_url = story_meta['url']
     print(story_meta)
+
+    story_filename = "".join([c if c.isalpha() or c.isdigit() or c==' ' else '_' for c in story_meta['title']]).strip()
+    chapter_count_width = len(str(story_meta['chapter_count']))
+
+    with open(folder / f'0-{story_filename}', 'w') as outfile:
+        outfile.write('\n')
 
     with open(folder / f'meta.json', 'w', encoding='utf-8') as outfile:
         json.dump(story_meta, outfile, sort_keys=True, indent=4)
         outfile.write('\n')
 
-    for chapter in scrape_story(story_url, starting_point=starting_point, session=s):
-        # print(chapter)
+    for chapter, pending_count, completed_count in scrape_story(story_url, starting_point=starting_point, session=s):
         # print_chapter(chapter)
-        pass
+        pending_count = str(pending_count).zfill(chapter_count_width)
+        completed_count = str(completed_count).zfill(chapter_count_width)
+        chapter_count = story_meta['chapter_count']
+        pretty_chapter_id = '-'.join([*chapter['id']])
+        print(f"{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}")
         with open(folder / f'{chapter["id"]}.json', 'w', encoding='utf-8') as outfile:
             json.dump(chapter, outfile, sort_keys=True, indent=4)
             outfile.write('\n')
