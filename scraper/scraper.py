@@ -226,11 +226,16 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
 
     # Find chapter links
     chapter_link_elements = content_soup.select('div > div > p[align=left]:has(> a)')
-    chapter_links = [{
-        'id': chapter_id + str(index + 1),
-        'text': p.select_one('a').get_text().strip(),
-        'type': 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
-    } for index, p in enumerate(chapter_link_elements)]
+    chapter_links = []
+    for index, p in enumerate(chapter_link_elements):
+        anchor = p.select_one('a')
+        choice_type = 'blank' if any([b.string == '*' for b in p.select('b')]) else 'chapter'
+        link = {
+            'id': chapter_id + str(index + 1),
+            'text': anchor.get_text().strip(),
+            'type': choice_type,
+        }
+        chapter_links.append(link)
 
     if len(chapter_links) is 0:
         return {
