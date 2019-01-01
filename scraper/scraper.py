@@ -53,7 +53,7 @@ def get_meta(story_url: str, *, session: requests.session):
 
     response = session.get(story_url)
     body = response.text
-    soup = BeautifulSoup(body, features="html.parser")
+    soup = BeautifulSoup(body, features="lxml")
 
     story_title = soup.select_one('.proll').string
     story_title = re.sub(r'\s+', ' ', story_title)
@@ -156,7 +156,7 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
         req = session.get(url)
         body = req.text
 
-    soup = BeautifulSoup(body, features="html.parser")
+    soup = BeautifulSoup(body, features="lxml")
 
     with timeit('is ending chapter'):
         ending_chapter = soup.select_one('.shadowBox > div:nth-of-type(1) > big > b')
