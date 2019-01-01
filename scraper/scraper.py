@@ -134,18 +134,6 @@ def clean_chapter_body(content: str):
     return content
 
 
-@contextlib.contextmanager
-def timeit(label):
-    start = time.perf_counter()
-    try:
-        yield
-    finally:
-        end = time.perf_counter()
-        duration = end - start
-        # print(f'[{label}]: {duration:0.2f}')
-        # print()
-
-
 def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     """
     input: url
