@@ -10,6 +10,7 @@ beautifulsoup4 = "^4.7"
 html2text = "^2018.1"
 requests = "^2.21"
 requests-cache = "^0.4.13"
+pendulum = "^2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
