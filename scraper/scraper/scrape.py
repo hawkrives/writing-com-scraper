@@ -274,7 +274,7 @@ def main(story_url, starting_point):
                 text = choice['text']
                 if choice['type'] == 'blank':
                     text = '* ' + text
-                print(f'{i+1}) {choice["text"]}')
+                print(f'{i+1}) {text}')
             print()
         print('-' * 72)
         print()
