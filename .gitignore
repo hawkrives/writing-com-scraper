@@ -107,3 +107,4 @@ venv.bak/
 *.sqlite
 /archive
 /urls.txt
+*.epub
