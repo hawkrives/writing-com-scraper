@@ -383,11 +383,13 @@ def main():
         completed_count = str(completed_count).zfill(chapter_count_width)
         chapter_count = story_meta['chapter_count']
         pretty_chapter_id = '-'.join([*chapter['id']])
-        stderr(f"{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}")
+        stderr(f"\r{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}", end="")
         chapter_filename = hashlib.sha256(chapter["id"].encode()).hexdigest()
         with open(chapters_dir / f'{chapter_filename}.json', 'w', encoding='utf-8') as outfile:
             json.dump(chapter, outfile, sort_keys=True, indent='\t')
             outfile.write('\n')
+
+    stderr()
 
 
 if __name__ == '__main__':
