@@ -356,10 +356,12 @@ def main():
         log_in(session=s, username=username, password=password)
         stderr(f'login took {time.perf_counter() - start:0.02}')
 
+    start = time.perf_counter()
     story_meta = get_meta(story_url, session=s, stale_ok=arguments.debug)
     # be sure to update with the canonical url
     story_url = story_meta['url']
-    stderr(story_meta)
+    stderr(json.dumps(story_meta, sort_keys=True, indent=4))
+    stderr(f'meta fetch took {time.perf_counter() - start:0.02}')
 
     story_filename = "".join([c if c.isalpha() or c.isdigit() or c==' ' else '_' for c in story_meta['title']]).strip()
     chapter_count_width = len(str(story_meta['chapter_count']))
