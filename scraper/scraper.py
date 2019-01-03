@@ -69,6 +69,8 @@ def get_meta(story_url: str, *, session: requests.session, stale_ok: bool = Fals
     story_title = re.sub(r'\s+', ' ', story_title)
     story_title = story_title.strip()
 
+    story_id = get_id(story_url)
+
     story_author = soup.select_one('.shadowBoxTop a[title^=Username]').text
 
     meta_items = soup.select('.mainLineBorderTop > div > div[style] > div')
@@ -82,6 +84,7 @@ def get_meta(story_url: str, *, session: requests.session, stale_ok: bool = Fals
 
     return {
         'url': response.url,
+        'id': story_id,
         'title': story_title,
         'author': story_author,
         'rating': rating,
