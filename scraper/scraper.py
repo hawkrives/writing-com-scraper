@@ -263,7 +263,11 @@ def scrape_chapter(url: str, *, chapter_id: str, session: requests.session):
     with requests_lock:
         body = fetch_page(url=url, session=session)
 
-    return process_chapter(body=body, chapter_id=chapter_id)
+    try:
+        return process_chapter(body=body, chapter_id=chapter_id)
+    except Exception as ex:
+        stderr('error while processing', url)
+        raise ex
 
 
 def scrape_story(story_index_url: str, *, starting_point: str, session: requests.session):
