@@ -365,7 +365,7 @@ def main():
         outfile.write('\n')
 
     with open(folder / f'meta.json', 'w', encoding='utf-8') as outfile:
-        json.dump(story_meta, outfile, sort_keys=True, indent=4)
+        json.dump(story_meta, outfile, sort_keys=True, indent='\t')
         outfile.write('\n')
 
     for chapter, pending_count, completed_count in scrape_story(story_url, starting_point=starting_point, session=s):
@@ -376,7 +376,7 @@ def main():
         pretty_chapter_id = '-'.join([*chapter['id']])
         stderr(f"{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}")
         with open(folder / f'{chapter["id"]}.json', 'w', encoding='utf-8') as outfile:
-            json.dump(chapter, outfile, sort_keys=True, indent=4)
+            json.dump(chapter, outfile, sort_keys=True, indent='\t')
             outfile.write('\n')
 
 
