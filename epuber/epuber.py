@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import pathlib
 import json
 from ebooklib import epub
@@ -140,7 +141,8 @@ def load_story(story_dir):
 			continue
 
 		choice_id = choice['id']
-		with open(story_dir / f'{choice_id}.json', 'r', encoding='utf-8') as infile:
+		chapter_filename = hashlib.sha256(choice["id"].encode()).hexdigest()
+		with open(story_dir / 'chapter' / f'{chapter_filename}.json', 'r', encoding='utf-8') as infile:
 			chapter = json.load(infile)
 			chapter['content'] = markdown2.markdown(chapter['content'], extras=['smarty-pants'])
 			chapters.append(chapter)

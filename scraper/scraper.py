@@ -3,6 +3,7 @@ import collections
 import contextlib
 import threading
 import argparse
+import hashlib
 import pathlib
 import random
 import json
@@ -348,6 +349,9 @@ def main():
     folder = pathlib.Path('.') / 'archive' / f'{story_id}'
     folder.mkdir(parents=True, exist_ok=True)
 
+    chapters_dir = folder / 'chapters'
+    chapters_dir.mkdir(parents=True, exist_ok=True)
+
     cache_backend = requests_cache.backends.sqlite.DbCache(location=(folder / 'cache').as_posix())
     s = requests_cache.CachedSession(backend=cache_backend)
 
@@ -380,7 +384,8 @@ def main():
         chapter_count = story_meta['chapter_count']
         pretty_chapter_id = '-'.join([*chapter['id']])
         stderr(f"{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}")
-        with open(folder / f'{chapter["id"]}.json', 'w', encoding='utf-8') as outfile:
+        chapter_filename = hashlib.sha256(chapter["id"].encode()).hexdigest()
+        with open(chapters_dir / f'{chapter_filename}.json', 'w', encoding='utf-8') as outfile:
             json.dump(chapter, outfile, sort_keys=True, indent='\t')
             outfile.write('\n')
 
