@@ -386,12 +386,22 @@ def main():
         pending_count = str(pending_count).zfill(chapter_count_width)
         completed_count = str(completed_count).zfill(chapter_count_width)
         chapter_count = story_meta['chapter_count']
+
         pretty_chapter_id = '-'.join([*chapter['id']])
+
+        if len(pretty_chapter_id) > 80:
+            pretty_chapter_id = pretty_chapter_id[:11] + '…' + pretty_chapter_id[-69:]
+
         stderr(f"\r{pending_count} {completed_count}/{chapter_count} {pretty_chapter_id}", end="")
-        chapter_filename = hashlib.sha256(chapter["id"].encode()).hexdigest()
-        with open(chapters_dir / f'{chapter_filename}.json', 'w', encoding='utf-8') as outfile:
-            json.dump(chapter, outfile, sort_keys=True, indent='\t')
-            outfile.write('\n')
+
+        try:
+            chapter_filename = hashlib.sha256(chapter["id"].encode()).hexdigest()
+            with open(chapters_dir / f'{chapter_filename}.json', 'w', encoding='utf-8') as outfile:
+                json.dump(chapter, outfile, sort_keys=True, indent='\t')
+                outfile.write('\n')
+        except Exception as ex:
+            stderr()
+            raise ex
 
     stderr()
 
